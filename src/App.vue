@@ -45,7 +45,8 @@
 
     <v-app>
 
-      <calendar-header style="display : none">
+    <h1>  Développement en cours, l'application n'est pas encore utilisable pour le moment, mais patience, c'est pour très bientôt </h1>
+            <calendar-header style="display : none">
         <!-- Toolbar -->
         <calendar-toolbar></calendar-toolbar>
         <!-- End Toolbar -->
