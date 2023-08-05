@@ -38,7 +38,7 @@
         v-model="model"
         @change="menu = false"
         :min="minDates"
-        :locale="fr"
+        locale="fr"
     ></v-date-picker>
   </v-menu>
 </template>

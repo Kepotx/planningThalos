@@ -87,7 +87,7 @@ export default {
       type: String
     },
     rules: {
-        type: Object
+        type: Array
       },
   },
 

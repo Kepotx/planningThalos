@@ -15,6 +15,7 @@
  */
 
 import { callMethod } from '../../helper/ServerCommHelper';
+import { FirebaseStore } from '../../../src/components/FirebaseFireStore'
 
 export const namespaced = true;
 export const state = {
@@ -74,7 +75,7 @@ export const getters = {
     if (byResourceCalendar) events = events.filter((event) => event.calendarId == rootState.resourceCalendar.id)
 
     if (typeof byCategory == 'object' && byCategory.id) events = events.filter((e) => (e.calendarId == byCategory.id))
-    
+
     const data = [];
     var resourceList = rootState.resources.resources.map(function(resource) {
         return resource['id'];
@@ -84,18 +85,18 @@ export const getters = {
       var filteredResources = event.resourceIds
       .filter((resource) => resourceList.includes(resource));
       event.occurrences.forEach((occurrence) => {
-          data.push({ 
-              ...event, 
+          data.push({
+              ...event,
               color: color.bg,
               start: occurrence.startDate,
               end: occurrence.endDate,
               allDay: event.fullDay,
               id: event.id + occurrence.occurrenceDate,
-              extendedProps: {...event, 
+              extendedProps: {...event,
                   eventId: event.id,
-                  color: color.bg, 
-                  occurrenceDate: occurrence.occurrenceDate, 
-                  resourceIds: filteredResources, 
+                  color: color.bg,
+                  occurrenceDate: occurrence.occurrenceDate,
+                  resourceIds: filteredResources,
                   originalStart: event.startDate,
                   originalOccurrenceStart: occurrence.startDate,
                   isResource: event.calendarId == rootState.resourceCalendar.id,
@@ -112,7 +113,7 @@ export const getters = {
     const type  = rootGetters['calendars/getCalendarType'];
     const byResourceCalendar = rootState.filters.byResourceCalendar
     const byCategory = rootState.filters.byCategory
-   
+
     let events = state.asideEvents;
 
     if (type == 'calendar' && !byResourceCalendar) events = events.filter((event) => event.calendarId != rootState.resourceCalendar.id)
@@ -129,14 +130,14 @@ export const getters = {
       const color = rootState.colorsMap[event.calendar.color] || rootState.colorsMap["col1"];
 
       event.occurrences.forEach((occurrence) => {
-          data.push({ 
-              ...event, 
+          data.push({
+              ...event,
               color: color.bg,
               start: occurrence.startDate,
               end: occurrence.endDate,
               allDay: event.fullDay,
               id: event.id + occurrence.occurrenceDate,
-              extendedProps: {...event, 
+              extendedProps: {...event,
                   color: color.bg
               }
           });
@@ -147,28 +148,17 @@ export const getters = {
       .filter((occurrence) => new Date(occurrence.end).getTime() >= new Date().getTime())
       .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())
       .slice(0, 4);
-    
+
     return data;
   },
 };
 
 export const actions = {
   async loadEvents({ commit },  { start, end }) {
-    await callMethod({
-        role: 'org.ametys.plugins.workspaces.calendars.actions.CalendarDAO',
-      methodName: 'getEvents',
-      parameters: [start || null, end || null],
-    })
-      .then((events) => {
+
+      start + end;
+      var events =  FirebaseStore.collection('events');
         commit('SET_EVENTS', events);
-      })
-      .catch((error) => {
-        window.VEvent.fire('loaderFail', {
-            title: "i18n.PLUGINS_WORKSPACES_PROJECT_SERVICE_MODULE_CALENDAR_LOAD_EVENT_ERROR_MSG",
-          text: "i18n.PLUGINS_WORKSPACES_PROJECT_SERVICE_MODULE_CALENDAR_GENERAL_ERROR_TEXT",
-          details: error,
-        });
-      });
   },
 
   async loadAsideEvents({ commit },  payload ) {
@@ -188,18 +178,18 @@ export const actions = {
         });
       });
   },
-  
+
   async updateEvent({ rootState }, updatedEvent) {
 
     window.VEvent.fire('loaderStart', {
         text: "i18n.PLUGINS_WORKSPACES_PROJECT_SERVICE_MODULE_CALENDAR_EDIT_EVENT_BEGIN_MSG"
     });
-    
+
     // Add edition action id
     updatedEvent.actionId = 2;
     updatedEvent.filterStart = rootState.filters.start;
     updatedEvent.filterEnd = rootState.filters.end;
-    
+
     return await callMethod({
         role: 'org.ametys.plugins.workspaces.calendars.actions.CalendarDAO',
         methodName: 'editEvent',
@@ -238,7 +228,7 @@ export const actions = {
     window.VEvent.fire('loaderStart', {
         text: "i18n.PLUGINS_WORKSPACES_PROJECT_SERVICE_MODULE_CALENDAR_DELETE_EVENT_BEGIN_MSG"
     });
-  
+
     await callMethod({
         role: 'org.ametys.plugins.workspaces.calendars.actions.CalendarDAO',
       methodName: 'deleteEvent',
@@ -277,12 +267,24 @@ export const actions = {
     window.VEvent.fire('loaderStart', {
       text: "i18n.PLUGINS_WORKSPACES_PROJECT_SERVICE_MODULE_CALENDAR_ADD_EVENT_BEGIN_MSG"
     });
-    
+
     // Add creation action id
     payload.actionId = 1;
     payload.filterStart = rootState.filters.start;
     payload.filterEnd = rootState.filters.end;
-    
+
+    FirebaseStore.collection("evts")
+             .add({ title: payload.title, start : payload.startDate, end : payload.endDate })
+             .then(() => {
+               console.log("Document successfully written!");
+             })
+             .catch((error) => {
+               console.error("Error writing document: ", error);
+             });
+               console.log(payload);
+             commit('ADD_EVENT', payload);
+     return;
+     /*
     return await callMethod({
         role: 'org.ametys.plugins.workspaces.calendars.actions.CalendarDAO',
         methodName: 'addEvent',
@@ -297,6 +299,7 @@ export const actions = {
             text: "i18n.PLUGINS_WORKSPACES_PROJECT_SERVICE_MODULE_CALENDAR_CREATE_EVENT_END_MSG"
         });
         */
+        /*
         commit('ADD_EVENT', data);
         window.VEvent.fire('loaderEnd', {
             text: "i18n.PLUGINS_WORKSPACES_PROJECT_SERVICE_MODULE_CALENDAR_CREATE_EVENT_END_MSG"
@@ -308,7 +311,7 @@ export const actions = {
           text: "i18n.PLUGINS_WORKSPACES_PROJECT_SERVICE_MODULE_CALENDAR_GENERAL_ERROR_TEXT",
           details: error,
         });
-      });
+      });*/
   },
 };
 

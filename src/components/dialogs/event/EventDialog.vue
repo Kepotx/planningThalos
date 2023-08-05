@@ -322,6 +322,7 @@ import DialogEndTimePicker from "./components/DialogEndTimePicker";
 import OccurrenceDialog from "./OccurrenceDialog";
 import i18n from '../../MessageFrench';
 import moment from 'moment-timezone';
+import { FirebaseStore } from './../../FirebaseFireStore'
 
 const originalForm = {
   title: '',
@@ -332,6 +333,7 @@ const originalForm = {
   recurrenceType: "NEVER",
   untilDate: null,
   tags: [],
+  calendars: [],
   location: "",
   organizatorEmail: "",
   description: "",
@@ -344,6 +346,9 @@ export default {
   name: "EventDialog",
   components: {DialogEndTimePicker, CheckResource, DialogTimePicker, ColorIndicator, DialogDatePicker, TagsComposer, OccurrenceDialog},
 
+  firestore: {
+      calendars: FirebaseStore.collection('calendars')
+  },
   data() {
     return {
       i18n: i18n,
@@ -812,7 +817,6 @@ export default {
      ...mapGetters({
          allTags: 'tags/getTags',
          canCreateTag: 'tags/canCreate',
-         calendars: 'calendars/calendars',
          resourceCalendar: 'calendars/resourceCalendar',
     }),
     formatedTags(){

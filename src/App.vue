@@ -56,7 +56,8 @@
           class="px-md-5 mt-md-10"
           :class="{'pt-10': $vuetify.breakpoint.smAndUp}">
         <!-- Skelton Loader -->
-        <calendar-module-skelton v-if="loading"></calendar-module-skelton>
+        <!--   <calendar-module-skelton v-if="loading"></calendar-module-skelton> -->
+        <calendar-module-skelton v-if="false"></calendar-module-skelton>
         <!-- End Skelton Loader  -->
 
         <v-row v-else>
@@ -81,7 +82,7 @@
       <fab-button-menu v-if="this.$vuetify.breakpoint.smAndDown"/>
       <!-- End Fab Button -->
 
-        <HelloWorld style="display : none"/>
+        <HelloWorld/>
     </v-app>
 </template>
 <script>

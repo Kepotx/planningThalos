@@ -75,6 +75,7 @@
           Ecosystem
         </h2>
 
+        {{documents}}
         <v-row justify="center">
           <a
             v-for="(eco, i) in ecosystem"
@@ -85,7 +86,6 @@
           >
             {{ eco.text }}
             doc:
-            {{documents}}
           </a>
         </v-row>
       </v-col>

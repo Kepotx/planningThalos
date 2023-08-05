@@ -13,12 +13,23 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-import { callMethod } from '../../helper/ServerCommHelper';
 
 export const namespaced = true;
 
 export const state = {
-  rights: {}
+  rights: {
+    "canCreateCalendar": true,
+    "canEditCalendar": true,
+    "canRemoveCalendar": true,
+    "canCreateEvent": true,
+    "canEditEvent": true,
+    "canRemoveAnyEvent": true,
+    "canRemoveSelfEvent": true,
+    "canCreateTags": true,
+    "canHandleResource": true,
+    "canBookResource": true,
+    "sharePrivateCalendar": true
+  }
 }
 
 export const mutations = {
@@ -37,20 +48,19 @@ export const actions = {
     async loadUserRights({ commit }) {
         window.VEvent.fire('loader', true)
 
-      await callMethod({
-          role: 'org.ametys.plugins.workspaces.calendars.actions.CalendarDAO',
-          methodName: 'getUserRights',
-      })
-      .then( data => {
-        commit('SET_RIGHTS', data);
-        window.VEvent.fire('loader', false);
-      })
-      .catch(error => {
-        window.VEvent.fire('loaderFail', { 
-            title: "i18n.PLUGINS_WORKSPACES_PROJECT_MODULE_TASKS_RIGHTS_ERROR_MSG",
-            text : "i18n.PLUGINS_WORKSPACES_PROJECT_MODULE_TASKS_GENERAL_ERROR_TEXT",
-            details: error
+        commit('SET_RIGHTS', {
+          "canCreateCalendar": true,
+          "canEditCalendar": true,
+          "canRemoveCalendar": true,
+          "canCreateEvent": true,
+          "canEditEvent": true,
+          "canRemoveAnyEvent": true,
+          "canRemoveSelfEvent": true,
+          "canCreateTags": true,
+          "canHandleResource": true,
+          "canBookResource": true,
+          "sharePrivateCalendar": true
         });
-      })
+        window.VEvent.fire('loader', false);
     }
 }

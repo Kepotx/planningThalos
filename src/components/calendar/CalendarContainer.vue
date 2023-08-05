@@ -293,6 +293,31 @@
             </v-card-text>
           </v-card>
         </v-menu>
+        <br>
+        doc(cc):
+        {{documents}}
+        <br>
+        cal : {{calendarsfs}}
+        <br>
+        events : {{evts}}
+        <br>
+        eventsBis : {{eventsBis}}
+        <el-button
+                   size="mini"
+                   type="danger"
+                   @click="readEVents()"
+                   >Delete</el-button
+                 >
+                 <el-button
+                            size="mini"
+                            type="danger"
+                            @click="updateEventFS(eventsBis[0].id, evts[0].title)"
+                            >Update</el-button
+                          >
+        <v-text-field v-model="evts[0].title"
+                      autofocus
+                      :label="i18n.PLUGINS_WORKSPACES_PROJECT_SERVICE_MODULE_CALENDAR_EDIT_EVENT_FIELD_TITLE_LABEL + '*'"
+        ></v-text-field>
         <!-- End Delete Confirm Dialog -->
         <av-dialog v-model="deleteConfirm" :dialog="true" variant="dark" @close="deleteConfirm = false"
                    :title="i18n.PLUGINS_WORKSPACES_PROJECT_SERVICE_MODULE_CALENDAR_FULL_CALENDAR_SELECTED_DELETE_EVENT_CONFIRM_TITLE"
@@ -347,6 +372,7 @@ import _ from 'lodash/lodash'
 import TagsShort from './events/TagsShort';
 import i18n from '../MessageFrench';
 import OccurrenceDialog from "./../dialogs/event/OccurrenceDialog";
+import { FirebaseStore } from './../FirebaseFireStore'
 
 import Hammer from 'hammerjs'
 
@@ -361,6 +387,11 @@ export default {
   name: "CalendarContainer",
     props: ['colorsMap'],
 
+          firestore: {
+              documents: FirebaseStore.collection('events'),
+                  evts: FirebaseStore.collection('evts'),
+              calendarsfs: FirebaseStore.collection('calendars')
+          },
   components: {
     FullCalendar,
     AvDialog,
@@ -373,6 +404,10 @@ export default {
 
   data() {
     return {
+      documents: [],
+      calendarsfs: [],
+      eventsBis: [],
+      evts: [ { "title": "titre", "start": "2023-03-04", "end": "2023-03-04" }],
       eventLoading: false,
       onSwipe: false,
       allDay: false,
@@ -387,7 +422,16 @@ export default {
       occurrenceModalMove: false,
       resourceUnavailable: false,
       toolbar: false,
-      i18n: i18n
+      i18n: i18n,
+      userRights2 : {
+        canEditEvent: true,
+        canHandleResource: true,
+        canCreateEvent: true,
+        canRemoveAnyEvent: true,
+        canRemoveSelfEvent: true,
+        handleResource: true
+
+      }
     }
   },
 
@@ -406,8 +450,8 @@ export default {
       start: state => state.filters.start,
       end: state => state.filters.end,
       byResourceCalendar: (state) => state.filters.byResourceCalendar,
-      userRights: state => state.userRights.rights,
       availableResources: state => state.resources.resourcesAvailability,
+      userRights: state => state.userRights.rights,
     }),
 
     config() {
@@ -430,7 +474,19 @@ export default {
         now: today,
         locale: locales["fr"],
         scrollTimeReset: false,
-        events: this.events,
+events: this.evts,
+//events: [ { "title": "titre", "start": "2023-03-05", "end": "2023-03-05" } ],
+//events :  [ { "start": "2023-03-03","end": "2023-03-03", "title": "titre" } ],
+//events :   [  {    id: 'a',    title: 'my event',    start: '2023-03-03'  }],
+        /*
+        events : [
+          {
+            id: 'a',
+            title: 'my event',
+            start: '2023-03-03'
+          }
+        ],
+        */
         resourceOrder:'title',
         resources: this.resources,
         // allDaySlot: this.allDay,
@@ -511,7 +567,39 @@ export default {
   },
 
   methods: {
+    updateEventFS(id, title) {
+          FirebaseStore.collection("evts")
+            .doc(id)
+            .update({
+              title: title,
+            })
+            .then(() => {
+              console.log("Document successfully updated!");
+            })
+            .catch((error) => {
+              console.error("Error updating document: ", error);
+            });
+        },
 
+    readEVents() {
+          let employeesData = [];
+          FirebaseStore.collection("evts")
+            .get()
+            .then((querySnapshot) => {
+              querySnapshot.forEach((doc) => {
+               employeesData.push({
+                  id: doc.id,
+                  title: doc.data().title,
+                });
+                console.log(doc.id, " => ", doc.data());
+              });
+              console.log(employeesData)
+              this.eventsBis = employeesData
+            })
+            .catch((error) => {
+              console.log("Error getting documents: ", error);
+            });
+        },
 
       confirmedMoveEvent(choice) {
 
@@ -528,6 +616,19 @@ export default {
       },
 
       moveEvent(choice) {
+        console.log(this.movedEvent.start)
+          console.log(moment(this.movedEvent.start).toISOString())
+          FirebaseStore.collection("evts")
+            .doc(this.movedEvent.id)
+            .update({
+              start: moment(this.movedEvent.start).toISOString(),
+            })
+            .then(() => {
+              console.log("Document successfully updated!");
+            })
+            .catch((error) => {
+              console.error("Error updating document: ", error);
+            });
           this.updateEvent({...this.movedEvent.extendedProps,
               choice: choice,
               zoneId: moment.tz.guess(),
@@ -634,7 +735,7 @@ export default {
     ...mapActions({
       updateEvent: 'events/updateEvent',
       deleteEvent: 'events/deleteEvent',
-      loadAsideEvents: 'events/loadAsideEvents'
+      //loadAsideEvents: 'events/loadAsideEvents'
     }),
 
     clickCustomButton(calendarType) {
@@ -853,10 +954,15 @@ export default {
       const isEndInsideRange = !this.end ? false :  new Date(dateInfo.endStr).getTime() <= new Date(this.end).getTime()
 
       if (!isStartInsideRange || !isEndInsideRange) {
-        this.eventLoading = true;
+        this.eventLoading = false;
         if(window.FullCalendarAPI) window.FullCalendarAPI.removeAllEvents()
         this.$store.dispatch('filters/setDateRange', { start: dateInfo.startStr, end: dateInfo.endStr });
-        this.loadEvents(()=> this.eventLoading = false)
+        this.eventLoading = false
+        /*
+        this.loadEvents(()=>
+        {
+        this.eventLoading = false
+      } )*/
       }
     },
 
@@ -978,10 +1084,15 @@ export default {
       this.isActiveResource()
       this.switchViewButtons(type === 'calendar' ? 'dayGridMonth' : 'resourceTimelineDay')
       if(type == 'calendar' && this.byResourceCalendar) {
-        this.eventLoading = true;
+        this.eventLoading = false;
         this.$store.dispatch('filters/setByResourceCalendar', false)
         if(window.FullCalendarAPI) window.FullCalendarAPI.removeAllEvents()
-        this.loadEvents(()=> this.eventLoading = false)
+        this.eventLoading = false
+        /*
+        this.loadEvents(()=>
+        {
+        this.eventLoading = false
+      } )*/
       }
     },
     selectedOpen(val) {
@@ -1010,8 +1121,9 @@ export default {
         })
       }
     })
-    this.loadAsideEvents({start: moment().format(), end: moment().add(1, 'year').format()})
-    this.handleCalendarHeight()
+    //this.loadAsideEvents({start: moment().format(), end: moment().add(1, 'year').format()})
+    this.handleCalendarHeight();
+    this.readEVents();
   }
 }
 </script>

@@ -13,13 +13,15 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-import { callMethod } from '../../helper/ServerCommHelper';
+import { callMethod } from '../../helper/ServerCommHelper'
+import { FirebaseStore } from '../../../src/components/FirebaseFireStore'
 
 export const namespaced = true;
 export const state = {
   calendars: [],
   type: null,
   resourceCalendar: {},
+  documents: []
 };
 
 export const mutations = {
@@ -28,6 +30,7 @@ export const mutations = {
   },
   SET_CALENDARS(state, data) {
     state.calendars = data;
+      state.documents =  FirebaseStore.collection('events');
   },
   ADD_CALENDAR(state, data) {
     state.calendars.push(data);
@@ -110,7 +113,7 @@ export const actions = {
     })
       .then((data) => {
         commit('UPDATE_CALENDAR', data);
-        
+
         const color = rootState.colorsMap[data.color] ? data.color : "col1";
 
         this.commit('events/UPDATE_EVENT_CALENDAR',{
@@ -119,7 +122,7 @@ export const actions = {
           public: data.visibility == "PUBLIC",
           color: color
         })
-        
+
         window.VEvent.fire('loaderEnd', {
           text: "i18n.PLUGINS_WORKSPACES_PROJECT_SERVICE_MODULE_CALENDAR_EDIT_CALENDAR_END_MSG"
         });
@@ -136,7 +139,7 @@ export const actions = {
       window.VEvent.fire('loaderStart', {
         text: "i18n.PLUGINS_WORKSPACES_PROJECT_SERVICE_MODULE_CALENDAR_DELETE_CALENDAR_BEGIN_MSG"
       });
-    
+
       await callMethod({
         role: 'org.ametys.plugins.workspaces.calendars.actions.CalendarDAO',
         methodName: 'deleteCalendar',
@@ -157,7 +160,7 @@ export const actions = {
           });
         });
     },
-    
+
   async loadCalendars({ commit, rootState }) {
     await callMethod({
       role: 'org.ametys.plugins.workspaces.calendars.actions.CalendarDAO',
